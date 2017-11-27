@@ -131,7 +131,7 @@ int run(int n, int array[n]) {
 int main(int n, char *args[n]) {
     if (n == 1) { // If './sort' was entered, perform tests
       test();
-      return 1;
+      return 0;
     } else {
         int valid = checkValid(n, args); // Check user entered numbers
         if (valid == 0) { // If user only entered numbers
