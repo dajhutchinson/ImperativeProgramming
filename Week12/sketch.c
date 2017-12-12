@@ -17,22 +17,13 @@
 #include <stdbool.h>
 
 struct state {
-  int x0, y0, x1, y1, n;
+  int x0, y0, x1, y1;
+  int n;
   bool pen;
   display* d;
 };
 
 typedef struct state state;
-
-int getOpcode(int n) {return n >> 6;}
-
-int getUnsignedOperand(int n) {
-  return (n & (0x3F));
-}
-
-int getSignedOperand(int n) {
-  return -(n & (0x20)) + (n & (0x1F));
-}
 
 state* newState(char* s) {
   state* new = malloc(sizeof(state));
@@ -40,61 +31,80 @@ state* newState(char* s) {
   new->y0 = 0;
   new->x1 = 0;
   new->y1 = 0;
-  new->n  = 0;
+  new->n = 0;
   new->pen = false;
   new->d = newDisplay(s, 200, 200);
   return new;
 }
 
-void drawLine(state* c) {
-  printf("line(d,%i,%i,%i,%i)\n",c->x0,c->y0,c->x1,c->y1);
-  line(c->d, c->x0, c->y0, c->x1, c->y1);
-  c->x0=c->x1;
-  c->y0=c->y1;
-  c->n = 0;
+int opcode(int n) {
+  return n >> 6;
 }
 
-void increasex0(state* c, int val) {c->x0 += val;}
+int unsignedOperand(int n) {
+  return (n & (0x3F));
+}
 
-void increasex1(state* c, int val) {c->x0 = c->x1; c->x1 += val; c->n++;}
+int signedOperand(int n) {
+  return -(n & (0x20)) + (n & (0x1F));
+}
 
-void increasey0(state* c, int val) {c->y0 += val;}
+void dx(state* c, int n) {
+  if (c->pen == true) c->x0=c->x1;
+  c->x1+=n;
+  if (!c->pen) c->x0=c->x1;
+}
 
-void increasey1(state* c, int val) {c->y0 = c->y1; c->y1 += val;c->n++;}
+void dy(state* c, int n) {
+  if (c->pen) c->y0=c->y1;
+  c->y1+=n;
+  if (!c->pen) c->y0=c->y1;
+}
 
-void penDown(state* c) {
-  c->x1 = c->x0;
-  c->y1 = c->y0;
+void dt(state* c, int n) {
+  printf("pause(d,%i0)\n", n);
+  pause(c->d, n*10);
+}
+
+void pen(state* c) {
+  if (c->pen) {
+    c->x0 = c->x1;
+    c->y0 = c->y1;
+  }
+  c->pen = !c->pen;
+}
+
+void drawLine(state* c) {
+  c->n++;
+  printf("-->{%i} line(d,%i,%i,%i,%i)\n",c->n,c->x0,c->y0,c->x1,c->y1);
+  line(c->d, c->x0, c->y0, c->x1, c->y1);
+  c->x0=c->x1; c->y0=c->y1;
 }
 
 void execute(state* c, unsigned char b) {
-  int code = getOpcode(b);
-  if ((code == 0) && (c->pen == false)) {increasex0(c, getSignedOperand(b));}
-  else if ((code == 0) && (c->pen == true))  {increasex1(c, getSignedOperand(b));}
-  else if ((code == 1) && (c->pen == false))  {increasey0(c, getSignedOperand(b));}
-  else if ((code == 1) && (c->pen == true))  {increasey1(c, getSignedOperand(b));}
-  else if (code == 2)  {printf("pause(d,%i0)\n", getUnsignedOperand(b)); drawLine(c); pause(c->d, getUnsignedOperand(b));}
-  else if ((code == 3) && (c->pen == false)) {penDown(c); c->pen = true;}
-  else if ((code == 3) && (c->pen == true))  {drawLine(c); c->pen = false; printf("Pen up\n");}
+  int code = opcode(b);
+  if (code == 0) {dx(c, signedOperand(b));}
+  else if (code == 1) {dy(c, signedOperand(b));}
+  else if (code == 2) {dt(c, unsignedOperand(b));}
+  else if (code == 3) {pen(c);}
+  if ((code == 1) && (c->pen == true)) drawLine(c);
 }
 
 void drawFile(char* s) {
+  printf("<%s>\n", s);
   FILE *in = fopen(s, "rb");
   unsigned char b = fgetc(in);
   state* c = newState(s);
   while (!feof(in)) {
     execute(c, b);
-    //printf("%i\n", getOpcode(b));
-    if (c->pen == true && c->n == 2) {drawLine(c); printf("Double\n");}
-    if (c->n == 2) c->n = 0;
     b = fgetc(in);
   }
   fclose(in);
   key(c->d);
-  printf("-------\n");
+  printf("------\n");
 }
 
-int main() {
+void test() {
   char* s = "line.sketch";
   drawFile(s);
   s = "diag.sketch";
@@ -107,5 +117,9 @@ int main() {
   drawFile(s);
   s = "cross.sketch";
   drawFile(s);
+}
+
+int main() {
+  test();
   return 0;
 }
