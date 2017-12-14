@@ -62,7 +62,6 @@ int signedOperand(int n) {
 }
 
 void drawLine(state* c) {
-  printf("line(d,%i,%i,%i,%i)\n",c->x0,c->y0,c->x1,c->y1);
   line(c->d, c->x0, c->y0, c->x1, c->y1);
   c->x0=c->x1; c->y0=c->y1;
 }
@@ -80,7 +79,6 @@ void dy(state* c, int n) {
 }
 
 void dt(state* c, int n) {
-  printf("pause(d,%i)\n", n*10);
   pause(c->d, n*10);
 }
 
@@ -94,12 +92,11 @@ void pen(state* c) {
 
 void clearDisplay(state* c) {
   clear(c->d);
-  printf("clear(d)\n");
 }
 
-void keyWait(state* c) { printf("key(d)\n"); key(c->d);}
+void keyWait(state* c) { key(c->d);}
 
-void changeColour(state*c) { printf("colour(0x%08x)\n", c->n); colour(c->d, c->n);}
+void changeColour(state*c) { colour(c->d, c->n);}
 
 void executeExt(state* c) {
   if (c->code == 0) dx(c, c->n);
@@ -167,7 +164,6 @@ void execute(state* c, unsigned char b) {
 }}
 
 void drawFile(char* s) {
-  printf("<%s>\n", s);
   FILE *in = fopen(s, "rb");
   unsigned char b = fgetc(in);
   state* c = newState(s);
@@ -177,11 +173,10 @@ void drawFile(char* s) {
   }
   fclose(in);
   end(c->d);
-  printf("------\n");
 }
 
 void test() {
-  char* s[11] = {"data/line.sketch", "data/diag.sketch", "data/square.sketch", "data/box.sketch", "data/oxo.sketch", "data/cross.sketch", "data/clear.sketch", "data/key.sketch", "data/field.sketch", "data/lawn.sketch", "data/pauses.sketch"};
+  char* s[11] = {"line.sketch", "diag.sketch", "square.sketch", "box.sketch", "oxo.sketch", "cross.sketch", "clear.sketch", "key.sketch", "field.sketch", "lawn.sketch", "pauses.sketch"};
   for (int k = 0; k < 11; k++) {
     drawFile(s[k]);
   }
